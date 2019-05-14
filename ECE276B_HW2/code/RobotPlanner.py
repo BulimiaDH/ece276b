@@ -1,4 +1,5 @@
 import numpy as np
+import RRT as rrt
 
 class RobotPlanner:
   __slots__ = ['boundary', 'blocks']
@@ -38,10 +39,19 @@ class RobotPlanner:
         break
       
       # Update newrobotpos
-      disttogoal = sum((newrp - goal)**2)
+      disttogoal = np.sqrt(sum((newrp - goal)**2))
       if( disttogoal < mindisttogoal):
         mindisttogoal = disttogoal
         newrobotpos = newrp
     
     return newrobotpos
+
+  # Let's first replan the whole path at every timestep. If this is too slow, we'll
+  # look into some form of Anytime-RRT.
+  def planRRT(self, start, goal):
+    next_pos = rrt.run_rrt(start, goal, self.boundary, self.blocks, delta=0.999)
+
+    return next_pos
+
+
 

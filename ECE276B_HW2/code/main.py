@@ -1,9 +1,14 @@
+
 import numpy as np
 import time
+import matplotlib;matplotlib.use("TkAgg")
 import matplotlib.pyplot as plt; plt.ion()
 from mpl_toolkits.mplot3d import Axes3D
 from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 import RobotPlanner
+
+
+DELAY = 0.5 #sec
 
 def tic():
   return time.time()
@@ -15,8 +20,8 @@ def load_map(fname):
   mapdata = np.loadtxt(fname,dtype={'names': ('type', 'xmin', 'ymin', 'zmin', 'xmax', 'ymax', 'zmax','r','g','b'),\
                                     'formats': ('S8','f', 'f', 'f', 'f', 'f', 'f', 'f','f','f')})
   blockIdx = mapdata['type'] == b'block'
-  boundary = mapdata[~blockIdx][['xmin', 'ymin', 'zmin', 'xmax', 'ymax', 'zmax','r','g','b']].view(('<f4',9))
-  blocks = mapdata[blockIdx][['xmin', 'ymin', 'zmin', 'xmax', 'ymax', 'zmax','r','g','b']].view(('<f4',9))
+  boundary = np.array(mapdata[~blockIdx][['xmin', 'ymin', 'zmin', 'xmax', 'ymax', 'zmax','r','g','b']].tolist())
+  blocks = np.array(mapdata[blockIdx][['xmin', 'ymin', 'zmin', 'xmax', 'ymax', 'zmax','r','g','b']].tolist())
   return boundary, blocks
 
 
@@ -57,11 +62,10 @@ def draw_block_list(ax,blocks):
     return h
 
 
-def runtest(mapfile, start, goal, verbose = True):
+def runtest(mapfile, start, goal, verbose = True, delay=False):
   # Instantiate a robot planner
   boundary, blocks = load_map(mapfile)
   RP = RobotPlanner.RobotPlanner(boundary, blocks)
-  
   # Display the environment
   if verbose:
     fig, ax, hb, hs, hg = draw_map(boundary, blocks, start, goal)  
@@ -71,20 +75,21 @@ def runtest(mapfile, start, goal, verbose = True):
   numofmoves = 0
   success = True
   while True:
+    print()
   
     # Call the robot planner
     t0 = tic()
-    newrobotpos = RP.plan(robotpos, goal)
+    newrobotpos = RP.planRRT(robotpos, goal)
     movetime = max(1, np.ceil((tic()-t0)/2.0))
     print('move time: %d' % movetime)
 
     # See if the planner was done on time
     if movetime > 1:
       newrobotpos = robotpos-0.5 + np.random.rand(3)
-    
+    print('newrobotpos: {}'.format(newrobotpos))
 
     # Check if the commanded position is valid
-    if sum((newrobotpos - robotpos)**2) > 1:
+    if np.sqrt(sum((newrobotpos - robotpos)**2)) > 1:
       print('ERROR: the robot cannot move so fast\n')
       success = False
     if( newrobotpos[0] < boundary[0,0] or newrobotpos[0] > boundary[0,3] or \
@@ -99,7 +104,7 @@ def runtest(mapfile, start, goal, verbose = True):
         print('ERROR: collision... BOOM, BAAM, BLAAM!!!\n')
         success = False
         break
-    if( success is False )
+    if( success is False ):
       break
     
     # Make the move
@@ -118,6 +123,9 @@ def runtest(mapfile, start, goal, verbose = True):
     if sum((robotpos-goal)**2) <= 0.1:
       break
 
+    if delay:
+      time.sleep(delay)
+
   return success, numofmoves
 
 
@@ -125,7 +133,7 @@ def runtest(mapfile, start, goal, verbose = True):
 def test_single_cube():    
   start = np.array([2.3, 2.3, 1.3])
   goal = np.array([7.0, 7.0, 6.0])
-  success, numofmoves = runtest('./maps/single_cube.txt', start, goal, True)
+  success, numofmoves = runtest('./maps/single_cube.txt', start, goal, True, DELAY)
   print('Success: %r'%success)
   print('Number of Moves: %i'%numofmoves)
   
@@ -133,46 +141,47 @@ def test_single_cube():
 def test_maze():
   start = np.array([0.0, 0.0, 1.0])
   goal = np.array([12.0, 12.0, 5.0])
-  success, numofmoves = runtest('./maps/maze.txt', start, goal, True)
+  success, numofmoves = runtest('./maps/maze.txt', start, goal, True, DELAY)
   print('Success: %r'%success)
   print('Number of Moves: %i'%numofmoves)
   
 def test_window():
   start = np.array([0.2, -4.9, 0.2])
   goal = np.array([6.0, 18.0, 3.0])
-  success, numofmoves = runtest('./maps/window.txt', start, goal, True)
+  success, numofmoves = runtest('./maps/window.txt', start, goal, True, DELAY)
   print('Success: %r'%success)
   print('Number of Moves: %i'%numofmoves)
 
 def test_tower():
   start = np.array([2.5, 4.0, 0.5])
   goal = np.array([4.0, 2.5, 19.5])
-  success, numofmoves = runtest('./maps/tower.txt', start, goal, True)
+  success, numofmoves = runtest('./maps/tower.txt', start, goal, True, DELAY)
  
 def test_flappy_bird():
   start = np.array([0.5, 2.5, 5.5])
   goal = np.array([19.0, 2.5, 5.5])
-  success, numofmoves = runtest('./maps/flappy_bird.txt', start, goal, True)
+  success, numofmoves = runtest('./maps/flappy_bird.txt', start, goal, True, DELAY)
   print('Success: %r'%success)
   print('Number of Moves: %i'%numofmoves) 
 
 def test_room():
   start = np.array([1.0, 5.0, 1.5])
   goal = np.array([9.0, 7.0, 1.5])
-  success, numofmoves = runtest('./maps/room.txt', start, goal, True)
+  success, numofmoves = runtest('./maps/room.txt', start, goal, True, DELAY)
   print('Success: %r'%success)
   print('Number of Moves: %i'%numofmoves)
 
 def test_monza():
   start = np.array([0.5, 1.0, 4.9])
   goal = np.array([3.8, 1.0, 0.1])
-  success, numofmoves = runtest('./maps/monza.txt', start, goal, True)
+  success, numofmoves = runtest('./maps/monza.txt', start, goal, True, DELAY)
   print('Success: %r'%success)
   print('Number of Moves: %i'%numofmoves)
 
+
 if __name__=="__main__":
   test_single_cube()
-  #test_maze()
+  # test_maze()
   #test_flappy_bird()
   #test_monza()
   #test_window()
