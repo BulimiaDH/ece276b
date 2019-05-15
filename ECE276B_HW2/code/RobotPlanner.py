@@ -1,13 +1,20 @@
 import numpy as np
 import RRT as rrt
 
+def tic():
+  return time.time()
+def toc(tstart, nm=""):
+  print('%s took: %s sec.\n' % (nm,(time.time() - tstart)))
+
 class RobotPlanner:
-  __slots__ = ['boundary', 'blocks']
+  __slots__ = ['boundary', 'blocks', 'step', 'path']
 
   def __init__(self, boundary, blocks):
     self.boundary = boundary
     self.blocks = blocks
-  
+    self.step = 0
+    self.path = None
+
   def plan(self,start,goal):
     # for now greedily move towards the goal
     newrobotpos = np.copy(start)
@@ -48,9 +55,32 @@ class RobotPlanner:
 
   # Let's first replan the whole path at every timestep. If this is too slow, we'll
   # look into some form of Anytime-RRT.
-  def planRRT(self, start, goal):
-    next_pos = rrt.run_rrt(start, goal, self.boundary, self.blocks, delta=0.999)
+  # def do_rrt(self,start,goal):
+  #   self.path = rrt.run_rrt(start, goal, self.boundary, self.blocks, delta=0.999)
 
+  # def planRRT(self, start, goal):
+  #   if not self.path:
+  #     self.do_rrt(start,goal)
+  #   next_pos = self.path[self.step]
+  #   self.step += 1
+  #   return next_pos
+
+  def do_rrt_star(self,start,goal):
+    self.path = rrt.run_rrt_star(start, goal, self.boundary, self.blocks, delta=0.999)
+
+  def planRRTstar(self, start, goal):
+    if not self.path:
+      self.do_rrt_star(start,goal)
+
+    # print('Path: \n')
+    # [print(node) for node in self.path]
+    # speed = [rrt.dist(self.path[i+1],self.path[i]) for i in range(len(self.path)-1)]
+    # print('Speeds:\n')
+    # [print(sp) for sp in speed]
+
+
+    next_pos = self.path[self.step]
+    self.step += 1
     return next_pos
 
 

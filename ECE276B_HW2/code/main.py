@@ -79,18 +79,21 @@ def runtest(mapfile, start, goal, verbose = True, delay=False):
   
     # Call the robot planner
     t0 = tic()
-    newrobotpos = RP.planRRT(robotpos, goal)
-    movetime = max(1, np.ceil((tic()-t0)/2.0))
+    newrobotpos = RP.planRRTstar(robotpos, goal)
+    t1 = (tic()-t0)
+    print('computation time: {}'.format(t1))
+    movetime = max(1, np.ceil(t1/2.0))
     print('move time: %d' % movetime)
 
     # See if the planner was done on time
-    if movetime > 1:
-      newrobotpos = robotpos-0.5 + np.random.rand(3)
+    # if movetime > 1:
+    #   newrobotpos = robotpos-0.5 + np.random.rand(3)
     print('newrobotpos: {}'.format(newrobotpos))
 
     # Check if the commanded position is valid
-    if np.sqrt(sum((newrobotpos - robotpos)**2)) > 1:
-      print('ERROR: the robot cannot move so fast\n')
+    delta_pos = np.sqrt(sum((newrobotpos - robotpos)**2))
+    if delta_pos > 1:
+      print('ERROR: the robot cannot move so fast: {}\n'.format(delta_pos))
       success = False
     if( newrobotpos[0] < boundary[0,0] or newrobotpos[0] > boundary[0,3] or \
         newrobotpos[1] < boundary[0,1] or newrobotpos[1] > boundary[0,4] or \
@@ -103,6 +106,7 @@ def runtest(mapfile, start, goal, verbose = True, delay=False):
           newrobotpos[2] > blocks[k,2] and newrobotpos[2] < blocks[k,5] ):
         print('ERROR: collision... BOOM, BAAM, BLAAM!!!\n')
         success = False
+        time.sleep(5)
         break
     if( success is False ):
       break
@@ -180,13 +184,13 @@ def test_monza():
 
 
 if __name__=="__main__":
-  test_single_cube()
+  # test_single_cube()
   # test_maze()
-  #test_flappy_bird()
-  #test_monza()
-  #test_window()
-  #test_tower()
-  #test_room()
+  # test_flappy_bird()
+  # test_monza()
+  # test_window()
+  test_tower()
+  # test_room()
   
 
 
