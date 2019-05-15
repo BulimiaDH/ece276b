@@ -184,12 +184,12 @@ def test_monza():
 
 
 if __name__=="__main__":
-  # test_single_cube()
+  test_single_cube()
   # test_maze()
   # test_flappy_bird()
   # test_monza()
   # test_window()
-  test_tower()
+  # test_tower()
   # test_room()
   
 

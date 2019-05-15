@@ -7,13 +7,14 @@ def toc(tstart, nm=""):
   print('%s took: %s sec.\n' % (nm,(time.time() - tstart)))
 
 class RobotPlanner:
-  __slots__ = ['boundary', 'blocks', 'step', 'path']
+  __slots__ = ['boundary', 'blocks', 'step', 'path', 'RRTPlanner']
 
   def __init__(self, boundary, blocks):
     self.boundary = boundary
     self.blocks = blocks
     self.step = 0
     self.path = None
+    self.RRTPlanner = rrt.RRT(boundary, blocks)
 
   def plan(self,start,goal):
     # for now greedily move towards the goal
@@ -66,7 +67,7 @@ class RobotPlanner:
   #   return next_pos
 
   def do_rrt_star(self,start,goal):
-    self.path = rrt.run_rrt_star(start, goal, self.boundary, self.blocks, delta=0.999)
+    self.path = self.RRTPlanner.run_rrt_star(start, goal, delta=0.999)
 
   def planRRTstar(self, start, goal):
     if not self.path:
